@@ -12,23 +12,21 @@ This project follows [Semantic Versioning](https://semver.org/). The current ver
 The service expects your ChirpStack JavaScript codec to output a JSON object with the following fields **on every uplink message**:
 
 - **data**: (object) Key-value pairs of sensor readings (e.g., temperature, battery, etc.)
-- **discovery**: (array) List of sensor metadata objects for Home Assistant discovery. Each object should include:
-  - `field`: The key in `data` (e.g., "temperature_celsius")
-  - `name`: Friendly name for the sensor
-  - `unit`: Unit of measurement (e.g., "°C", "%", "kg")
-  - `device_class`: (optional) Home Assistant device class (e.g., "temperature", "battery")
-- **device**: (object) Device metadata for Home Assistant device registry. Should include:
-  - `identifiers`: Array of unique IDs (e.g., DevEUI)
-  - `name`: Device name
-  - `manufacturer`, `model`, `sw_version`, `hw_version`: (optional) Device info
-- **downlinks**: (array, optional) List of downlink command metadata for Home Assistant controls. Each object should include:
-  - `field`: Command name (e.g., "tare", "set_interval")
-  - `name`: Friendly name for the control
-  - `type`: One of the supported types below
-  - Additional fields depending on type (see below)
-  - `description`: (optional) Help text
+  - **discovery**: (object) Contains two arrays:
+    - `sensors`: List of sensor metadata objects for Home Assistant discovery. Each object should include:
+      - `field`: The key in `data` (e.g., "temperature_celsius")
+      - `name`: Friendly name for the sensor
+      - `unit`: Unit of measurement (e.g., "°C", "%", "kg")
+      - `device_class`: (optional) Home Assistant device class (e.g., "temperature", "battery")
+      - `precision`: (optional) Suggested display precision for Home Assistant
+    - `commands`: (array, optional) List of downlink command metadata for Home Assistant controls. Each object should include:
+      - `field`: Command name (e.g., "tare", "set_interval")
+      - `name`: Friendly name for the control
+      - `type`: One of the supported types below
+      - Additional fields depending on type (see below)
+      - `description`: (optional) Help text
 
-> **Note:** The codec should always include the full `discovery`, `device`, and `downlinks` info in every uplink message. The discovery service will only publish Home Assistant discovery/config topics if the discovery/device/downlinks data changes, so there is no risk of spamming Home Assistant with redundant config messages.
+> **Note:** The codec should always include the full `discovery` info (with `sensors` and `commands`) in every uplink message. The discovery service will only publish Home Assistant discovery/config topics if the discovery/commands data changes, so there is no risk of spamming Home Assistant with redundant config messages.
 
 ### Supported Downlink Types
 
@@ -43,7 +41,7 @@ The service expects your ChirpStack JavaScript codec to output a JSON object wit
 #### Example Downlink Entries
 
 ```json
-"downlinks": [
+"commands": [
   {
     "field": "tare",
     "name": "Tare Scale",
@@ -90,77 +88,74 @@ The service expects your ChirpStack JavaScript codec to output a JSON object wit
   "data": {
     "temperature_celsius": 23.5,
     "weight_kg": 1.23,
-    "battery_percent": 87.2
-  },
-  "discovery": [
-    {
-      "field": "temperature_celsius",
-      "name": "Temperature",
-      "unit": "°C",
-      "device_class": "temperature"
-    },
-    {
-      "field": "weight_kg",
-      "name": "Weight",
-      "unit": "kg"
-    },
-    {
-      "field": "battery_percent",
-      "name": "Battery",
-      "unit": "%",
-      "device_class": "battery"
+    "battery_percent": 87.2,
+    "discovery": {
+      "sensors": [
+        {
+          "field": "temperature_celsius",
+          "name": "Temperature",
+          "unit": "°C",
+          "device_class": "temperature",
+          "precision": 2
+        },
+        {
+          "field": "weight_kg",
+          "name": "Weight",
+          "unit": "kg",
+          "precision": 3
+        },
+        {
+          "field": "battery_percent",
+          "name": "Battery",
+          "unit": "%",
+          "device_class": "battery",
+          "precision": 1
+        }
+      ],
+      "commands": [
+        {
+          "field": "tare",
+          "name": "Tare Scale",
+          "type": "button",
+          "description": "Tare the load cell"
+        },
+        {
+          "field": "set_interval",
+          "name": "Set Interval",
+          "type": "number",
+          "min": 1,
+          "max": 255,
+          "step": 1,
+          "unit": "10s",
+          "description": "Set reporting interval (in 10s units)"
+        },
+        {
+          "field": "mode",
+          "name": "Operating Mode",
+          "type": "select",
+          "options": ["auto", "manual", "off"],
+          "description": "Select device mode"
+        },
+        {
+          "field": "enabled",
+          "name": "Enable Device",
+          "type": "switch",
+          "description": "Enable or disable the device"
+        },
+        {
+          "field": "label",
+          "name": "Set Label",
+          "type": "text",
+          "max": 32,
+          "description": "Set a custom label for the device"
+        }
+      ]
     }
-  ],
-  "device": {
-    "identifiers": ["abcdef1234567890"],
-    "name": "CubeCell LoRa Node",
-    "manufacturer": "Heltec",
-    "model": "HTCC-AB01",
-    "sw_version": "1.0.0"
-  },
-  "downlinks": [
-    {
-      "field": "tare",
-      "name": "Tare Scale",
-      "type": "button",
-      "description": "Tare the load cell"
-    },
-    {
-      "field": "set_interval",
-      "name": "Set Interval",
-      "type": "number",
-      "min": 1,
-      "max": 255,
-      "step": 1,
-      "unit": "10s",
-      "description": "Set reporting interval (in 10s units)"
-    },
-    {
-      "field": "mode",
-      "name": "Operating Mode",
-      "type": "select",
-      "options": ["auto", "manual", "off"],
-      "description": "Select device mode"
-    },
-    {
-      "field": "enabled",
-      "name": "Enable Device",
-      "type": "switch",
-      "description": "Enable or disable the device"
-    },
-    {
-      "field": "label",
-      "name": "Set Label",
-      "type": "text",
-      "max": 32,
-      "description": "Set a custom label for the device"
-    }
-  ]
+  }
 }
 ```
 
-- The service uses `discovery` and `device` to generate Home Assistant discovery/config topics for sensors.
-- The `downlinks` array is used to create Home Assistant controls (button, number, select, switch, text) for sending downlink commands via MQTT.
+- The service uses `discovery.sensors` and `discovery.commands` (both under `data`) to generate Home Assistant discovery/config topics for sensors and downlink controls.
 - The `data` object is published as the state payload for the device.
 
 ## Features
@@ -204,7 +199,9 @@ All configuration is via environment variables:
 
 ## Running with Docker Compose
 
-A working `docker-compose.yml` is included for local development and testing. It starts both a Mosquitto MQTT broker and the Home Assistant Discovery Service.
+A working `docker-compose.yml` is included for running with the published image from GitHub Container Registry. It starts both a Mosquitto MQTT broker and the Home Assistant Discovery Service.
+
+> **Note:** Replace `<your-github-username>` with your actual GitHub username in the image reference below.
 
 Example `docker-compose.yml`:
 
@@ -222,7 +219,7 @@ services:
       - mosquitto_config:/mosquitto/config
 
   ha-discovery-service:
-    build: .
+    image: ghcr.io/rtozer/ha-discovery-service:latest
     depends_on:
       - mosquitto
     environment:
@@ -241,10 +238,18 @@ volumes:
   mosquitto_config:
 ```
 
-To start the stack:
+To start the stack with the published image:
 
 ```sh
-docker-compose up --build
+docker-compose up -d
+```
+
+### Local Development
+
+For local development and testing, use `docker-compose-local.yml`, which builds the image from your local Dockerfile:
+
+```sh
+docker-compose -f docker-compose-local.yml up --build
 ```
 
 This will build the service and start both containers. The service will connect to the Mosquitto broker at `mosquitto:1883`.

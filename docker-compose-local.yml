@@ -9,7 +9,7 @@ services:
       - mosquitto_config:/mosquitto/config
 
   ha-discovery-service:
-    image: ghcr.io/rtozer/ha-discovery-service:latest
+    build: .
     depends_on:
       - mosquitto
     environment:
