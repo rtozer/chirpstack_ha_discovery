@@ -199,9 +199,7 @@ All configuration is via environment variables:
 
 ## Running with Docker Compose
 
-A working `docker-compose.yml` is included for running with the published image from GitHub Container Registry. It starts both a Mosquitto MQTT broker and the Home Assistant Discovery Service.
-
-> **Note:** Replace `<your-github-username>` with your actual GitHub username in the image reference below.
+A working `docker-compose.yml` is included for running with the published image from Docker Hub. It starts both a Mosquitto MQTT broker and the Home Assistant Discovery Service.
 
 Example `docker-compose.yml`:
 
@@ -219,7 +217,7 @@ services:
       - mosquitto_config:/mosquitto/config
 
   ha-discovery-service:
-    image: ghcr.io/rtozer/ha-discovery-service:latest
+    image: rtozer/ha-discovery-service:latest
     depends_on:
       - mosquitto
     environment:
