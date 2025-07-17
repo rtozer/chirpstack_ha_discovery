@@ -1,0 +1,28 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_config:/mosquitto/config
+
+  ha-discovery-service:
+    build: .
+    depends_on:
+      - mosquitto
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USERNAME: ""
+      MQTT_PASSWORD: ""
+      HA_DISCOVERY_PREFIX: homeassistant
+      CHIRPSTACK_UPLINK_TOPIC: application/+/device/+/event/up
+      CHIRPSTACK_DOWNLINK_TOPIC: application/+/device/+/command/down
+      LOG_LEVEL: INFO
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
+  mosquitto_config: 
