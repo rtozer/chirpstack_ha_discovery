@@ -1,0 +1,10 @@
+{
+  "domain": "chirpstack_ha",
+  "name": "ChirpStack Home Assistant Integration",
+  "version": "0.1.0",
+  "documentation": "https://github.com/rtozer/chirpstack_ha_discovery",
+  "requirements": [],
+  "dependencies": ["mqtt"],
+  "codeowners": ["@yourusername"],
+  "config_flow": true
+} 

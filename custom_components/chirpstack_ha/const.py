@@ -1,0 +1,1 @@
+DOMAIN = "chirpstack_ha" 

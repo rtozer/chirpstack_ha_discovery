@@ -93,6 +93,9 @@ def publish_ha_discovery(dev_eui, ha_device_name, application_id, discovery, dow
                 "name": ha_device_name
             }
         }
+        # If the command specifies enabled_by_default, include it
+        if "enabled_by_default" in dl:
+            base_payload["enabled_by_default"] = dl["enabled_by_default"]
         entity_type = dl["type"]
         if entity_type == "button":
             payload = base_payload.copy()

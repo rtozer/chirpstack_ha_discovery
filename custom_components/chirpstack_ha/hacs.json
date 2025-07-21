@@ -1,0 +1,7 @@
+{
+  "name": "ChirpStack Home Assistant Integration",
+  "content_in_root": false,
+  "domains": ["chirpstack_ha"],
+  "country": "any",
+  "homeassistant": "2023.0.0"
+} 
