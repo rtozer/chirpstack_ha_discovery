@@ -27,6 +27,13 @@ OPTIONAL_FIELDS = [
     "tags", "include_entities", "exclude_entities", "username", "password", "database", "bucket", "org", "token"
 ]
 
+def mask_secrets(entry_data):
+    masked = dict(entry_data)
+    for k in masked:
+        if 'token' in k or 'password' in k:
+            masked[k] = '***'
+    return masked
+
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
@@ -103,7 +110,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         entry[key] = value
                 if tags is not None:
                     entry["tags"] = tags
-                _LOGGER.debug(f"[ConfigFlow] Creating entry with data: {entry}")
+                _LOGGER.debug(f"[ConfigFlow] Creating entry with data: {mask_secrets(entry)}")
                 # Update hass.data[DOMAIN][entry_id] immediately if possible
                 if hasattr(self, 'hass') and hasattr(self, 'config_entry'):
                     domain_data = self.hass.data.setdefault(DOMAIN, {})
@@ -228,7 +235,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         entry.pop(key, None)
                     else:
                         entry[key] = value
-                _LOGGER.debug(f"[OptionsFlow] Updating entry with data: {entry}")
+                _LOGGER.debug(f"[OptionsFlow] Updating entry with data: {mask_secrets(entry)}")
                 self.hass.config_entries.async_update_entry(self.config_entry, data=entry)
                 # Update hass.data[DOMAIN][entry_id] immediately
                 domain_data = self.hass.data.setdefault(DOMAIN, {})

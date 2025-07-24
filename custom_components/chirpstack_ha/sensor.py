@@ -77,7 +77,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # Get latest config from hass.data for this entry
     domain_data = hass.data.get(DOMAIN, {})
     entry_data = domain_data.get(entry.entry_id, entry.data)
-    _LOGGER.debug(f"[InfluxDB] entry_data at setup: {entry_data}")
+    _LOGGER.debug(f"[InfluxDB] entry_data at setup: {mask_secrets(entry_data)}")
     influxdb_config = entry_data  # Use the whole config entry data dict
     influxdb_client = None
     influxdb_write_api = None
@@ -154,26 +154,39 @@ async def async_setup_entry(hass, entry, async_add_entities):
             tags = {}
         # --- End normalize tags ---
         new_entities = []
-        last_values = {}  # Track last value for each entity_id_tag
+        # First, ensure all sensors exist and are added if missing
         for sensor_info in discovery:
             field = sensor_info["field"]
             unique_id = f"{dev_eui}_{field}"
-            # Look up the entity in the registry by unique_id
             entity = next(
                 (e for e in entity_reg.entities.values()
                  if e.domain == "sensor" and e.platform == DOMAIN and e.unique_id == unique_id and e.config_entry_id == entry_id),
                 None
             )
+            if unique_id in sensors:
+                sensor = sensors[unique_id]
+            else:
+                sensor = ChirpstackHASensor(dev_eui, sensor_info, device_name)
+                sensors[unique_id] = sensor
+                new_entities.append(sensor)
+        if new_entities:
+            async_add_entities(new_entities)
+            await asyncio.sleep(0.1)
+            entity_reg_latest = er.async_get(hass)
+        else:
+            entity_reg_latest = entity_reg
+        # Now process history for all sensors
+        for sensor_info in discovery:
+            field = sensor_info["field"]
+            unique_id = f"{dev_eui}_{field}"
+            entity = next(
+                (e for e in entity_reg_latest.entities.values()
+                 if e.domain == "sensor" and e.platform == DOMAIN and e.unique_id == unique_id and e.config_entry_id == entry_id),
+                None
+            )
             if entity:
-                # Explicitly assign entity_id for this sensor
                 entity_id = entity.entity_id
-                if unique_id in sensors:
-                    sensor = sensors[unique_id]
-                else:
-                    sensor = ChirpstackHASensor(dev_eui, sensor_info, device_name)
-                    sensor.entity_id = entity_id
-                    sensors[unique_id] = sensor
-                    new_entities.append(sensor)
+                sensor = sensors[unique_id]
                 included = is_entity_included(entity_id, influxdb_config)
                 state_class = getattr(sensor, "state_class", None)
                 has_history = bool(history)
@@ -250,7 +263,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 if value is not None:
                     await sensor.async_update_state(value)
             else:
-                # If the entity is not in the registry, skip history backfill
                 _LOGGER.debug(f"[InfluxDB] Skipping history for {unique_id} because entity_id is not in registry.")
         # Update last value for live updates
         # last_values[entity_id_tag] = current_value
@@ -483,3 +495,10 @@ class ChirpstackHASensor(SensorEntity):
 
 def create_sensor(dev_eui, sensor_info, device_name):
     return ChirpstackHASensor(dev_eui, sensor_info, device_name) 
+
+def mask_secrets(entry_data):
+    masked = dict(entry_data)
+    for k in masked:
+        if 'token' in k or 'password' in k:
+            masked[k] = '***'
+    return masked 
