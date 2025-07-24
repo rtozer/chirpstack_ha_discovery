@@ -22,6 +22,8 @@ async def async_setup_entry(hass, entry):
     # Set up shared data for callbacks
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN].setdefault("entity_callbacks", [])
+    # Store config entry data for platform access
+    hass.data[DOMAIN][entry.entry_id] = entry.data
 
     def notify_mqtt_required(_event=None):
         hass.async_create_task(
@@ -118,7 +120,9 @@ async def async_unload_entry(hass, entry):
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         # Optionally clean up hass.data[DOMAIN] if needed
-        pass
+        # Clean up config entry data
+        if entry.entry_id in hass.data.get(DOMAIN, {}):
+            hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
 async def async_reload_entry(hass, entry):

@@ -142,3 +142,20 @@ function decodeUplink(input) {
   return { data: data };
 }
 ``` 
+
+## Backfill Functionality (InfluxDB Only)
+
+This integration supports **historic backfill** of sensor data, allowing you to write past values (e.g., from device history or batch uploads) directly to InfluxDB. This is especially useful for LoRaWAN devices that report data in batches or with delayed uplinks.
+
+**Important:**
+- **Backfill only works with InfluxDB.** Home Assistant does **not** allow historic writes to its internal database (SQLite or MariaDB). Only the current state can be set in HA; historic data must be sent to an external time-series database like InfluxDB.
+- The integration will automatically detect and write historic values (from the `history` field in device uplinks) to InfluxDB, using the correct timestamp for each value.
+- Backfill points are deduplicated: only values that differ from the previous value in InfluxDB are written, and the most recent value is always compared against the true latest value in the database (regardless of tags).
+- You can configure InfluxDB connection details and optional tags in the integration options.
+
+**Usage Notes:**
+- Ensure InfluxDB is enabled and configured in the integration options.
+- Backfill will not affect Home Assistant's internal history or statistics—only InfluxDB will contain the historic data.
+- If you use tags (e.g., `source: HA`), the integration will ensure deduplication and correct querying across all tag sets.
+
+For more details, see the configuration section and InfluxDB setup instructions below. 

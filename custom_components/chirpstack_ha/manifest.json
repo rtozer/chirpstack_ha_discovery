@@ -5,6 +5,6 @@
   "documentation": "https://github.com/rtozer/chirpstack_ha_discovery",
   "requirements": [],
   "dependencies": ["mqtt"],
-  "codeowners": ["@yourusername"],
+  "codeowners": ["@rtozer"],
   "config_flow": true
 } 
