@@ -1,7 +1,7 @@
 # ChirpStack Home Assistant Integration
 
 **Integration Name:** ChirpStack Home Assistant Integration  
-**Version:** 0.1.0  
+**Version:** 0.2.0  
 **Documentation:** https://github.com/rtozer/chirpstack_ha_discovery  
 **Codeowners:** @rtozer  
 
